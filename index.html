@@ -51,12 +51,25 @@
     let allImages = [];
     let currentPage = 1;
     const imagesPerPage = 100;
+    let activeURLs = [];
 
     document.getElementById('folderInput').addEventListener('change', function(event) {
-      const files = Array.from(event.target.files);
-      allImages = files.filter(file => file.type.startsWith('image/'));
+      const input = this;
+      const files = Array.from(input.files);
+
+      // Giải phóng các URL cũ
+      activeURLs.forEach(url => URL.revokeObjectURL(url));
+      activeURLs = [];
+
+      allImages = files
+        .filter(file => file.type.startsWith('image/'))
+        .sort((a, b) => a.name.localeCompare(b.name)); // Sắp xếp theo tên ảnh
+
       currentPage = 1;
       displayPage(currentPage);
+
+      // Reset input để lần sau chọn lại cũng hoạt động
+      input.value = '';
     });
 
     function displayPage(page) {
@@ -69,7 +82,14 @@
 
       pageImages.forEach(file => {
         const img = document.createElement('img');
-        img.src = URL.createObjectURL(file);
+        const url = URL.createObjectURL(file);
+        img.src = url;
+        activeURLs.push(url);
+
+        img.onload = () => {
+          URL.revokeObjectURL(url); // Giải phóng sau khi ảnh load
+        };
+
         gallery.appendChild(img);
       });
 
